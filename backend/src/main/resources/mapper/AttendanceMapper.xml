@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.AttendanceMapper">
+
+    <select id="selectByClassAndDate" resultType="com.teaching.entity.Attendance">
+        SELECT s.id            AS student_id,
+               s.student_no,
+               s.name          AS student_name,
+               s.gender,
+               a.id,
+               a.class_id,
+               a.attendance_date,
+               a.status
+        FROM student s
+        LEFT JOIN attendance a ON s.id = a.student_id
+            AND a.attendance_date = #{attendanceDate}
+            AND a.is_deleted = 0
+        WHERE s.class_id = #{classId}
+          AND s.is_deleted = 0
+        ORDER BY s.student_no
+    </select>
+
+    <select id="selectByStudentAndDate" resultType="com.teaching.entity.Attendance">
+        SELECT id, student_id, class_id, attendance_date, status,
+               create_time, update_time, is_deleted
+        FROM attendance
+        WHERE student_id = #{studentId}
+          AND attendance_date = #{attendanceDate}
+          AND is_deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO attendance (student_id, class_id, attendance_date, status,
+                                create_time, update_time, is_deleted)
+        VALUES (#{studentId}, #{classId}, #{attendanceDate}, #{status},
+                NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE attendance
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <insert id="insertOrUpdate" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO attendance (student_id, class_id, attendance_date, status,
+                                create_time, update_time, is_deleted)
+        VALUES (#{studentId}, #{classId}, #{attendanceDate}, #{status},
+                NOW(), NOW(), 0)
+        ON DUPLICATE KEY UPDATE status = #{status}, update_time = NOW()
+    </insert>
+
+    <insert id="batchInsertPresent">
+        INSERT INTO attendance (student_id, class_id, attendance_date, status,
+                                create_time, update_time, is_deleted)
+        SELECT s.id, s.class_id, #{attendanceDate}, 1, NOW(), NOW(), 0
+        FROM student s
+        WHERE s.class_id = #{classId}
+          AND s.is_deleted = 0
+          AND NOT EXISTS (
+              SELECT 1 FROM attendance a
+              WHERE a.student_id = s.id
+                AND a.attendance_date = #{attendanceDate}
+                AND a.is_deleted = 0
+          )
+    </insert>
+
+    <select id="selectStats" resultType="java.util.HashMap">
+        SELECT COUNT(*)                                              AS total,
+               COALESCE(SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END), 0) AS present,
+               COALESCE(SUM(CASE WHEN a.status = 2 THEN 1 ELSE 0 END), 0) AS late,
+               COALESCE(SUM(CASE WHEN a.status = 3 THEN 1 ELSE 0 END), 0) AS `leave`,
+               COALESCE(SUM(CASE WHEN a.status = 4 THEN 1 ELSE 0 END), 0) AS absent
+        FROM attendance a
+        WHERE a.class_id = #{classId}
+          AND a.attendance_date = #{attendanceDate}
+          AND a.is_deleted = 0
+    </select>
+
+    <select id="selectDailyStats" resultType="java.util.HashMap">
+        SELECT COUNT(*)                                              AS total,
+               COALESCE(SUM(CASE WHEN a.status = 1 THEN 1 ELSE 0 END), 0) AS present
+        FROM attendance a
+        WHERE a.attendance_date = #{attendanceDate}
+          AND a.is_deleted = 0
+    </select>
+
+</mapper>

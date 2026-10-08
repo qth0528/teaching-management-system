@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.UserMapper">
+
+    <select id="selectByUsername" resultType="com.teaching.entity.User">
+        SELECT id, username, password, status, login_fail_count, locked_until,
+               last_login_time, create_time, update_time, is_deleted
+        FROM user
+        WHERE username = #{username}
+          AND is_deleted = 0
+    </select>
+
+    <update id="updateLoginFail">
+        UPDATE user
+        SET login_fail_count = #{loginFailCount},
+            status = #{status},
+            locked_until = #{lockedUntil},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateLoginSuccess">
+        UPDATE user
+        SET login_fail_count = 0,
+            status = 1,
+            locked_until = NULL,
+            last_login_time = NOW(),
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.TeacherMapper">
+
+    <select id="selectAll" resultType="com.teaching.entity.Teacher">
+        SELECT id, user_id, teacher_no, name, gender, phone,
+               create_time, update_time, is_deleted
+        FROM teacher
+        WHERE is_deleted = 0
+        ORDER BY id
+    </select>
+
+</mapper>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.ClassMapper">
+
+    <select id="selectPage" resultType="com.teaching.entity.Clazz">
+        SELECT c.id, c.class_name, c.teacher_id, c.room_number,
+               c.create_time, c.update_time, c.is_deleted,
+               t.name AS teacher_name,
+               (SELECT COUNT(*) FROM student s
+                WHERE s.class_id = c.id AND s.is_deleted = 0) AS student_count
+        FROM `class` c
+        LEFT JOIN teacher t ON c.teacher_id = t.id AND t.is_deleted = 0
+        WHERE c.is_deleted = 0
+        <if test="className != null and className != ''">
+            AND c.class_name LIKE CONCAT('%', #{className}, '%')
+        </if>
+        ORDER BY c.id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countPage" resultType="int">
+        SELECT COUNT(*)
+        FROM `class`
+        WHERE is_deleted = 0
+        <if test="className != null and className != ''">
+            AND class_name LIKE CONCAT('%', #{className}, '%')
+        </if>
+    </select>
+
+    <select id="selectAll" resultType="com.teaching.entity.Clazz">
+        SELECT id, class_name
+        FROM `class`
+        WHERE is_deleted = 0
+        ORDER BY id
+    </select>
+
+    <select id="selectById" resultType="com.teaching.entity.Clazz">
+        SELECT c.id, c.class_name, c.teacher_id, c.room_number,
+               c.create_time, c.update_time, c.is_deleted,
+               t.name AS teacher_name,
+               (SELECT COUNT(*) FROM student s
+                WHERE s.class_id = c.id AND s.is_deleted = 0) AS student_count
+        FROM `class` c
+        LEFT JOIN teacher t ON c.teacher_id = t.id AND t.is_deleted = 0
+        WHERE c.id = #{id}
+          AND c.is_deleted = 0
+    </select>
+
+    <select id="selectByClassName" resultType="com.teaching.entity.Clazz">
+        SELECT id, class_name, teacher_id, room_number,
+               create_time, update_time, is_deleted
+        FROM `class`
+        WHERE class_name = #{className}
+          AND is_deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `class` (class_name, teacher_id, room_number,
+                             create_time, update_time, is_deleted)
+        VALUES (#{className}, #{teacherId}, #{roomNumber},
+                NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE `class`
+        SET class_name = #{className},
+            teacher_id = #{teacherId},
+            room_number = #{roomNumber},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE `class`
+        SET is_deleted = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <select id="countStudentsByClassId" resultType="int">
+        SELECT COUNT(*)
+        FROM student
+        WHERE class_id = #{classId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="selectStudentsByClassId" resultType="com.teaching.entity.Student">
+        SELECT id, student_no, name, gender, class_id, phone, address,
+               create_time, update_time, is_deleted
+        FROM student
+        WHERE class_id = #{classId}
+          AND is_deleted = 0
+        ORDER BY student_no
+    </select>
+
+</mapper>

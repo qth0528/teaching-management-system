@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.CourseMapper">
+
+    <select id="selectPage" resultType="com.teaching.entity.Course">
+        SELECT id, course_name, full_score, create_time, update_time, is_deleted
+        FROM course
+        WHERE is_deleted = 0
+        <if test="courseName != null and courseName != ''">
+            AND course_name LIKE CONCAT('%', #{courseName}, '%')
+        </if>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countPage" resultType="int">
+        SELECT COUNT(*)
+        FROM course
+        WHERE is_deleted = 0
+        <if test="courseName != null and courseName != ''">
+            AND course_name LIKE CONCAT('%', #{courseName}, '%')
+        </if>
+    </select>
+
+    <select id="selectAll" resultType="com.teaching.entity.Course">
+        SELECT id, course_name, full_score
+        FROM course
+        WHERE is_deleted = 0
+        ORDER BY id
+    </select>
+
+    <select id="selectById" resultType="com.teaching.entity.Course">
+        SELECT id, course_name, full_score, create_time, update_time, is_deleted
+        FROM course
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByCourseName" resultType="com.teaching.entity.Course">
+        SELECT id, course_name, full_score, create_time, update_time, is_deleted
+        FROM course
+        WHERE course_name = #{courseName} AND is_deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO course (course_name, full_score, create_time, update_time, is_deleted)
+        VALUES (#{courseName}, #{fullScore}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE course
+        SET course_name = #{courseName},
+            full_score = #{fullScore},
+            update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE course
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+</mapper>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.ScoreMapper">
+
+    <select id="selectPage" resultType="com.teaching.entity.Score">
+        SELECT sc.id, sc.student_id, sc.class_id, sc.course_id,
+               sc.exam_name, sc.exam_type, sc.score, sc.exam_date,
+               sc.create_time, sc.update_time, sc.is_deleted,
+               s.student_no, s.name AS student_name, s.gender,
+               cl.class_name,
+               co.course_name, co.full_score
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id AND s.is_deleted = 0
+        LEFT JOIN `class` cl ON sc.class_id = cl.id AND cl.is_deleted = 0
+        LEFT JOIN course co ON sc.course_id = co.id AND co.is_deleted = 0
+        WHERE sc.is_deleted = 0
+        <if test="studentName != null and studentName != ''">
+            AND s.name LIKE CONCAT('%', #{studentName}, '%')
+        </if>
+        <if test="classId != null">
+            AND sc.class_id = #{classId}
+        </if>
+        <if test="courseId != null">
+            AND sc.course_id = #{courseId}
+        </if>
+        <if test="examName != null and examName != ''">
+            AND sc.exam_name LIKE CONCAT('%', #{examName}, '%')
+        </if>
+        ORDER BY sc.id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countPage" resultType="int">
+        SELECT COUNT(*)
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id AND s.is_deleted = 0
+        WHERE sc.is_deleted = 0
+        <if test="studentName != null and studentName != ''">
+            AND s.name LIKE CONCAT('%', #{studentName}, '%')
+        </if>
+        <if test="classId != null">
+            AND sc.class_id = #{classId}
+        </if>
+        <if test="courseId != null">
+            AND sc.course_id = #{courseId}
+        </if>
+        <if test="examName != null and examName != ''">
+            AND sc.exam_name LIKE CONCAT('%', #{examName}, '%')
+        </if>
+    </select>
+
+    <select id="selectById" resultType="com.teaching.entity.Score">
+        SELECT sc.id, sc.student_id, sc.class_id, sc.course_id,
+               sc.exam_name, sc.exam_type, sc.score, sc.exam_date,
+               sc.create_time, sc.update_time, sc.is_deleted,
+               s.student_no, s.name AS student_name, s.gender,
+               cl.class_name,
+               co.course_name, co.full_score
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id AND s.is_deleted = 0
+        LEFT JOIN `class` cl ON sc.class_id = cl.id AND cl.is_deleted = 0
+        LEFT JOIN course co ON sc.course_id = co.id AND co.is_deleted = 0
+        WHERE sc.id = #{id} AND sc.is_deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO score (student_id, class_id, course_id, exam_name, exam_type,
+                           score, exam_date, create_time, update_time, is_deleted)
+        VALUES (#{studentId}, #{classId}, #{courseId}, #{examName}, #{examType},
+                #{score}, #{examDate}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE score
+        SET score = #{score},
+            update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO score (student_id, class_id, course_id, exam_name, exam_type,
+                           score, exam_date, create_time, update_time, is_deleted)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.studentId}, #{item.classId}, #{item.courseId},
+             #{item.examName}, #{item.examType}, #{item.score}, #{item.examDate},
+             NOW(), NOW(), 0)
+        </foreach>
+    </insert>
+
+    <select id="countByStudentExamCourse" resultType="int">
+        SELECT COUNT(*)
+        FROM score
+        WHERE student_id = #{studentId}
+          AND exam_name = #{examName}
+          AND course_id = #{courseId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="selectStats" resultType="java.util.HashMap">
+        SELECT COUNT(*)                                         AS total,
+               COUNT(sc.score)                                  AS scored_count,
+               COALESCE(SUM(CASE WHEN sc.score IS NULL THEN 1 ELSE 0 END), 0) AS absent_count,
+               CAST(COALESCE(MAX(sc.score), 0) AS DECIMAL(5,1)) AS max_score,
+               CAST(COALESCE(MIN(sc.score), 0) AS DECIMAL(5,1)) AS min_score,
+               CAST(COALESCE(AVG(sc.score), 0) AS DECIMAL(5,1)) AS avg_score,
+               COALESCE(SUM(CASE WHEN sc.score IS NOT NULL AND sc.score >= co.full_score * 0.6 THEN 1 ELSE 0 END), 0) AS pass_count
+        FROM score sc
+        JOIN course co ON sc.course_id = co.id AND co.is_deleted = 0
+        WHERE sc.class_id = #{classId}
+          AND sc.course_id = #{courseId}
+          AND sc.exam_name = #{examName}
+          AND sc.is_deleted = 0
+    </select>
+
+</mapper>

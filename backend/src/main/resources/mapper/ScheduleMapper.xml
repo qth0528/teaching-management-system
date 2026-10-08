@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.ScheduleMapper">
+
+    <select id="selectByClassAndSemester" resultType="com.teaching.entity.Schedule">
+        SELECT sch.id, sch.class_id, sch.course_id, sch.teacher_id,
+               sch.day_of_week, sch.period, sch.room_number, sch.semester,
+               sch.create_time, sch.update_time, sch.is_deleted,
+               c.class_name,
+               co.course_name,
+               t.name AS teacher_name
+        FROM schedule sch
+        LEFT JOIN `class` c ON sch.class_id = c.id AND c.is_deleted = 0
+        LEFT JOIN course co ON sch.course_id = co.id AND co.is_deleted = 0
+        LEFT JOIN teacher t ON sch.teacher_id = t.id AND t.is_deleted = 0
+        WHERE sch.class_id = #{classId}
+          AND sch.semester = #{semester}
+          AND sch.is_deleted = 0
+        ORDER BY sch.day_of_week, sch.period
+    </select>
+
+    <select id="selectById" resultType="com.teaching.entity.Schedule">
+        SELECT sch.id, sch.class_id, sch.course_id, sch.teacher_id,
+               sch.day_of_week, sch.period, sch.room_number, sch.semester,
+               sch.create_time, sch.update_time, sch.is_deleted,
+               c.class_name,
+               co.course_name,
+               t.name AS teacher_name
+        FROM schedule sch
+        LEFT JOIN `class` c ON sch.class_id = c.id AND c.is_deleted = 0
+        LEFT JOIN course co ON sch.course_id = co.id AND co.is_deleted = 0
+        LEFT JOIN teacher t ON sch.teacher_id = t.id AND t.is_deleted = 0
+        WHERE sch.id = #{id}
+          AND sch.is_deleted = 0
+    </select>
+
+    <select id="countClassConflict" resultType="int">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE class_id = #{classId}
+          AND day_of_week = #{dayOfWeek}
+          AND period = #{period}
+          AND semester = #{semester}
+          AND is_deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countTeacherConflict" resultType="int">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE teacher_id = #{teacherId}
+          AND day_of_week = #{dayOfWeek}
+          AND period = #{period}
+          AND semester = #{semester}
+          AND is_deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countRoomConflict" resultType="int">
+        SELECT COUNT(*)
+        FROM schedule
+        WHERE room_number = #{roomNumber}
+          AND day_of_week = #{dayOfWeek}
+          AND period = #{period}
+          AND semester = #{semester}
+          AND is_deleted = 0
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO schedule (class_id, course_id, teacher_id, day_of_week, period,
+                              room_number, semester, create_time, update_time, is_deleted)
+        VALUES (#{classId}, #{courseId}, #{teacherId}, #{dayOfWeek}, #{period},
+                #{roomNumber}, #{semester}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE schedule
+        SET course_id = #{courseId},
+            teacher_id = #{teacherId},
+            room_number = #{roomNumber},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM schedule
+        WHERE id = #{id} AND is_deleted = 0
+    </delete>
+
+    <select id="selectByClassSemesterDays" resultType="com.teaching.entity.Schedule">
+        SELECT id, class_id, course_id, teacher_id, day_of_week, period,
+               room_number, semester, create_time, update_time, is_deleted
+        FROM schedule
+        WHERE class_id = #{classId}
+          AND semester = #{semester}
+          AND is_deleted = 0
+        <if test="dayOfWeeks != null and dayOfWeeks.size() > 0">
+            AND day_of_week IN
+            <foreach collection="dayOfWeeks" item="day" open="(" separator="," close=")">
+                #{day}
+            </foreach>
+        </if>
+        ORDER BY day_of_week, period
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO schedule (class_id, course_id, teacher_id, day_of_week, period,
+                              room_number, semester, create_time, update_time, is_deleted)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.classId}, #{item.courseId}, #{item.teacherId},
+             #{item.dayOfWeek}, #{item.period}, #{item.roomNumber},
+             #{item.semester}, NOW(), NOW(), 0)
+        </foreach>
+    </insert>
+
+</mapper>

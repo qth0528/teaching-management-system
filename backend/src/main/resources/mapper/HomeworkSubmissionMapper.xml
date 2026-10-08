@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.HomeworkSubmissionMapper">
+
+    <select id="selectByHomeworkId" resultType="com.teaching.entity.HomeworkSubmission">
+        SELECT hs.id, hs.homework_id, hs.student_id, hs.content,
+               hs.submit_time, hs.score, hs.comment, hs.status, hs.is_late,
+               hs.create_time, hs.update_time, hs.is_deleted,
+               s.student_no, s.name AS student_name
+        FROM homework_submission hs
+        LEFT JOIN student s ON hs.student_id = s.id AND s.is_deleted = 0
+        WHERE hs.homework_id = #{homeworkId} AND hs.is_deleted = 0
+        ORDER BY s.student_no
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO homework_submission (homework_id, student_id, content, submit_time,
+                                         score, comment, status, is_late,
+                                         create_time, update_time, is_deleted)
+        VALUES (#{homeworkId}, #{studentId}, #{content}, #{submitTime},
+                #{score}, #{comment}, #{status}, #{isLate},
+                NOW(), NOW(), 0)
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO homework_submission (homework_id, student_id, content, submit_time,
+                                         score, comment, status, is_late,
+                                         create_time, update_time, is_deleted)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.homeworkId}, #{item.studentId}, #{item.content}, #{item.submitTime},
+             #{item.score}, #{item.comment}, #{item.status}, #{item.isLate},
+             NOW(), NOW(), 0)
+        </foreach>
+    </insert>
+
+    <update id="update">
+        UPDATE homework_submission
+        SET content = #{content},
+            submit_time = #{submitTime},
+            score = #{score},
+            comment = #{comment},
+            status = #{status},
+            is_late = #{isLate},
+            update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <update id="deleteByHomeworkId">
+        UPDATE homework_submission
+        SET is_deleted = 1, update_time = NOW()
+        WHERE homework_id = #{homeworkId} AND is_deleted = 0
+    </update>
+
+    <select id="countByHomeworkId" resultType="int">
+        SELECT COUNT(*)
+        FROM homework_submission
+        WHERE homework_id = #{homeworkId} AND is_deleted = 0
+    </select>
+
+    <select id="selectById" resultType="com.teaching.entity.HomeworkSubmission">
+        SELECT hs.id, hs.homework_id, hs.student_id, hs.content,
+               hs.submit_time, hs.score, hs.comment, hs.status, hs.is_late,
+               hs.create_time, hs.update_time, hs.is_deleted,
+               s.student_no, s.name AS student_name
+        FROM homework_submission hs
+        LEFT JOIN student s ON hs.student_id = s.id AND s.is_deleted = 0
+        WHERE hs.id = #{id} AND hs.is_deleted = 0
+    </select>
+
+    <select id="selectByHomeworkAndStudent" resultType="com.teaching.entity.HomeworkSubmission">
+        SELECT hs.id, hs.homework_id, hs.student_id, hs.content,
+               hs.submit_time, hs.score, hs.comment, hs.status, hs.is_late,
+               hs.create_time, hs.update_time, hs.is_deleted,
+               s.student_no, s.name AS student_name
+        FROM homework_submission hs
+        LEFT JOIN student s ON hs.student_id = s.id AND s.is_deleted = 0
+        WHERE hs.homework_id = #{homeworkId}
+          AND hs.student_id = #{studentId}
+          AND hs.is_deleted = 0
+    </select>
+
+    <select id="countPending" resultType="int">
+        SELECT COUNT(*)
+        FROM homework_submission
+        WHERE status = 2 AND is_deleted = 0
+    </select>
+
+</mapper>

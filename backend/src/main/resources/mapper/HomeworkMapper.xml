@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.teaching.mapper.HomeworkMapper">
+
+    <select id="selectPage" resultType="com.teaching.entity.Homework">
+        SELECT h.id, h.title, h.description, h.class_id, h.course_id,
+               h.teacher_id, h.publish_time, h.deadline,
+               h.create_time, h.update_time, h.is_deleted,
+               cl.class_name,
+               co.course_name,
+               t.name AS teacher_name,
+               (SELECT COUNT(*) FROM homework_submission hs
+                WHERE hs.homework_id = h.id AND hs.is_deleted = 0 AND hs.status IN (2, 3)) AS submit_count,
+               (SELECT COUNT(*) FROM homework_submission hs
+                WHERE hs.homework_id = h.id AND hs.is_deleted = 0) AS total_count
+        FROM homework h
+        LEFT JOIN `class` cl ON h.class_id = cl.id AND cl.is_deleted = 0
+        LEFT JOIN course co ON h.course_id = co.id AND co.is_deleted = 0
+        LEFT JOIN teacher t ON h.teacher_id = t.id AND t.is_deleted = 0
+        WHERE h.is_deleted = 0
+        <if test="classId != null">
+            AND h.class_id = #{classId}
+        </if>
+        <if test="courseId != null">
+            AND h.course_id = #{courseId}
+        </if>
+        ORDER BY h.id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countPage" resultType="int">
+        SELECT COUNT(*)
+        FROM homework h
+        WHERE h.is_deleted = 0
+        <if test="classId != null">
+            AND h.class_id = #{classId}
+        </if>
+        <if test="courseId != null">
+            AND h.course_id = #{courseId}
+        </if>
+    </select>
+
+    <select id="selectById" resultType="com.teaching.entity.Homework">
+        SELECT h.id, h.title, h.description, h.class_id, h.course_id,
+               h.teacher_id, h.publish_time, h.deadline,
+               h.create_time, h.update_time, h.is_deleted,
+               cl.class_name,
+               co.course_name,
+               t.name AS teacher_name
+        FROM homework h
+        LEFT JOIN `class` cl ON h.class_id = cl.id AND cl.is_deleted = 0
+        LEFT JOIN course co ON h.course_id = co.id AND co.is_deleted = 0
+        LEFT JOIN teacher t ON h.teacher_id = t.id AND t.is_deleted = 0
+        WHERE h.id = #{id} AND h.is_deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO homework (title, description, class_id, course_id, teacher_id,
+                              publish_time, deadline, create_time, update_time, is_deleted)
+        VALUES (#{title}, #{description}, #{classId}, #{courseId}, #{teacherId},
+                NOW(), #{deadline}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="update">
+        UPDATE homework
+        SET title = #{title},
+            description = #{description},
+            deadline = #{deadline},
+            update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE homework
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+</mapper>
